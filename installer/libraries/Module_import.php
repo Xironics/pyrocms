@@ -153,16 +153,19 @@ class Module_import {
 		{
 			// Loop through modules
 			$modules = glob($directory.'modules/*', GLOB_ONLYDIR);
-			foreach ($modules as $module_name)
+			if( isset($modules) && is_array($modules) )
 			{
-				$slug = basename($module_name);
-
-				if ( ! $details_class = $this->_spawn_class($slug, $is_core))
+				foreach ($modules as $module_name)
 				{
-					continue;
+					$slug = basename($module_name);
+	
+					if ( ! $details_class = $this->_spawn_class($slug, $is_core))
+					{
+						continue;
+					}
+	
+					$this->install($slug, $is_core);
 				}
-
-				$this->install($slug, $is_core);
 			}
 
 			// Going back around, 2nd time is addons
