@@ -472,61 +472,65 @@ class Module_m extends MY_Model
 		}
 
 		foreach (array(APPPATH, ADDONPATH, SHARED_ADDONPATH) as $directory)
-    	{
-			foreach (glob($directory.'modules/*', GLOB_ONLYDIR) as $path)
+    {
+			$glob = glob($directory.'modules/*', GLOB_ONLYDIR);
+			if ($glob)
 			{
-				$slug = basename($path);
-
-				// Yeah yeah we know
-				if (in_array($slug, $known_array))
+				foreach ($glob as $path)
 				{
-					$details_file = $directory . 'modules/' . $slug . '/details'.EXT;
-
-					if (file_exists($details_file) &&
-						filemtime($details_file) > $known_mtime[$slug]['updated_on'] &&
-						$module = $this->_spawn_class($slug, $is_core))
+					$slug = basename($path);
+	
+					// Yeah yeah we know
+					if (in_array($slug, $known_array))
 					{
-						list($class) = $module;
-						
-						// Get some basic info
-						$input = $class->info();
-
-						$this->update($slug, array(
-							'name'			=> serialize($input['name']),
-							'description'	=> serialize($input['description']),
-							'is_frontend'	=> ! empty($input['frontend']),
-							'is_backend'	=> ! empty($input['backend']),
-							'skip_xss'		=> ! empty($input['skip_xss']),
-							'menu'			=> ! empty($input['menu']) ? $input['menu'] : FALSE,
-							'updated_on'	=> now()
-						));
-
-						log_message('debug', sprintf('The information of the module "%s" has been updated', $slug));
+						$details_file = $directory . 'modules/' . $slug . '/details'.EXT;
+	
+						if (file_exists($details_file) &&
+							filemtime($details_file) > $known_mtime[$slug]['updated_on'] &&
+							$module = $this->_spawn_class($slug, $is_core))
+						{
+							list($class) = $module;
+							
+							// Get some basic info
+							$input = $class->info();
+	
+							$this->update($slug, array(
+								'name'			=> serialize($input['name']),
+								'description'	=> serialize($input['description']),
+								'is_frontend'	=> ! empty($input['frontend']),
+								'is_backend'	=> ! empty($input['backend']),
+								'skip_xss'		=> ! empty($input['skip_xss']),
+								'menu'			=> ! empty($input['menu']) ? $input['menu'] : FALSE,
+								'updated_on'	=> now()
+							));
+	
+							log_message('debug', sprintf('The information of the module "%s" has been updated', $slug));
+						}
+	
+						continue;
 					}
-
-					continue;
+	
+					// This doesnt have a valid details.php file! :o
+					if ( ! $module = $this->_spawn_class($slug, $is_core))
+					{
+						continue;
+					}
+					
+					list ($class) = $module;
+	
+					// Get some basic info
+					$input = $class->info();
+	
+					// Now lets set some details ourselves
+					$input['slug']			= $slug;
+					$input['version']		= $class->version;
+					$input['enabled']		= $is_core; // enable if core
+					$input['installed']		= $is_core; // install if core
+					$input['is_core']		= $is_core; // is core if core
+	
+					// Looks like it installed ok, add a record
+					$this->add($input);
 				}
-
-				// This doesnt have a valid details.php file! :o
-				if ( ! $module = $this->_spawn_class($slug, $is_core))
-				{
-					continue;
-				}
-				
-				list ($class) = $module;
-
-				// Get some basic info
-				$input = $class->info();
-
-				// Now lets set some details ourselves
-				$input['slug']			= $slug;
-				$input['version']		= $class->version;
-				$input['enabled']		= $is_core; // enable if core
-				$input['installed']		= $is_core; // install if core
-				$input['is_core']		= $is_core; // is core if core
-
-				// Looks like it installed ok, add a record
-				$this->add($input);
 			}
 
 			// Going back around, 2nd time is addons
