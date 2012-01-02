@@ -2308,7 +2308,7 @@ Ensure your main styling comes before this!
 	.one_full section.title, .one_full section.item {width: 1250px;}
 
 	.one_half { 
-		width: 625px; 
+		width: 598px; 
 		margin-right: 10px;
 		float: left; 
 	}
